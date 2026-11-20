@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>진로 도서 아카이브</title>
+<style>
+:root{--ink:#20332d;--muted:#68756f;--paper:#f5f7f4;--green:#245844;--line:#e1e8e2;--mint:#e9f2ec;--white:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}
+header{background:linear-gradient(125deg,#173e30,#32664d);color:white;padding:42px 22px 34px}
+.wrap{max-width:1040px;margin:auto}
+header .eyebrow{font-size:12px;letter-spacing:.16em;opacity:.75;font-weight:700}
+h1{font-size:clamp(28px,5vw,42px);margin:10px 0 8px;letter-spacing:-.05em}
+header p{margin:0;color:#e1eee5;font-size:15px}
+main{max-width:1040px;margin:0 auto;padding:24px 20px 56px}
+.searchbox{display:flex;gap:10px;background:white;border:1px solid var(--line);border-radius:14px;padding:12px 15px;box-shadow:0 5px 20px #183b2b0a}
+.searchbox input{border:0;outline:0;flex:1;font:inherit;min-width:0}
+.searchbox span{color:var(--muted)}
+.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:28px 0 13px}
+h2{font-size:19px;margin:0;letter-spacing:-.03em}
+.hint{font-size:12px;color:var(--muted)}
+.categories{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:10px}
+.cat{background:white;border:1px solid var(--line);border-radius:13px;padding:15px;text-align:left;cursor:pointer;color:var(--ink);transition:.15s}
+.cat:hover,.cat.active{border-color:#6e9b7c;background:var(--mint)}
+.cat strong{display:block;font-size:15px;margin-bottom:5px}
+.cat small{color:var(--muted);line-height:1.5}
+.results{margin-top:25px}
+.resulttop{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.count{font-size:12px;color:var(--muted)}
+.booklist{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:11px}
+.book{background:white;border:1px solid var(--line);border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:10px;color:var(--ink);text-decoration:none;cursor:pointer;transition:.15s}
+.book:hover{border-color:#6e9b7c;background:var(--mint)}
+.book h3{font-size:16px;line-height:1.45;margin:0;letter-spacing:-.025em}
+.author{font-size:13px;color:var(--muted);margin-top:-5px}
+.meta{font-size:12px;color:#68756f;line-height:1.55}
+.bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;padding-top:3px}
+.status{font-size:12px;font-weight:700;border-radius:99px;padding:6px 9px;white-space:nowrap}
+.yes{background:#e6f3e9;color:#23623c}
+.no{background:#f0f1ef;color:#626b65}
+.location{font-size:12px;color:#53645b;text-align:right}
+.empty{padding:35px;text-align:center;background:white;border:1px dashed #cbd7cd;border-radius:13px;color:var(--muted)}
+footer{font-size:12px;color:var(--muted);text-align:center;margin-top:28px;line-height:1.7}
+button:focus-visible,input:focus-visible{outline:3px solid #8bb99a;outline-offset:2px}
+@media(max-width:560px){
+header{padding:32px 18px 28px}
+main{padding:18px 14px 40px}
+.sectionhead{align-items:start;flex-direction:column;gap:4px}
+.booklist{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+<div class="wrap">
+<div class="eyebrow">CAREER × READING</div>
+<h1>진로 도서 아카이브</h1>
+<p>관심 있는 계열을 선택하고, 진로 탐색에 도움이 되는 책을 찾아보세요.</p>
+</div>
+</header>
+<main>
+<label class="searchbox">
+<span>⌕</span>
+<input id="search" type="search" placeholder="책 제목, 저자, 계열 검색">
+</label>
+<div class="sectionhead">
+<h2>계열 선택</h2>
+<div class="hint">계열을 선택하면 해당 도서 목록이 표시됩니다.</div>
+</div>
+<div class="categories" id="categories"></div>
+<section class="results">
+<div class="resulttop">
+<h2 id="heading">전체 도서</h2>
+<div class="count" id="count"></div>
+</div>
+<div class="booklist" id="books"></div>
+</section>
+<footer>
+도서관 소장 여부는 제공된 목록을 기준으로 표시했습니다.<br>
+○ 표시 도서는 소장 도서이며, 위치 정보가 제공된 경우 함께 표기했습니다. X 표시 도서는 목록상 미소장 도서입니다.
+</footer>
+</main>
+<script>
+const groups = [
+{name:"인문·어문 계열",desc:"국어국문 · 영어영문 · 문예창작 등",books:[
+["공정하다는 착각","마이클 샌델","332.6 샌28ㄱ",true,"2.5층 폐가제"],
+["단어가 품은 세계","황선엽","",false,""],
+["빌 브라이슨 언어의 탄생","빌 브라이슨","740.9 브292ㅇ",true,"2층"]]},
+{name:"철학·역사·종교 계열",desc:"철학과 · 사학과 · 종교학과 등",books:[
+["서양철학사","버트런드 러셀","",false,""],
+["지식과 이성","앙드레 베르제즈 · 드 니 위스망 공저","166.08 베296ㅍ v.3",true,"2.5층 폐가제"],
+["자유론","존 스튜어트 밀","164.42 밀63ㅈ",true,"1층"],
+["한국사, 한걸음 더","한국역사연구회","911 한16ㅎ",true,"2층"]]},
+{name:"경영·경제 계열",desc:"경영학과 · 경제학과 · 무역학과 · 통계학과 · 회계학과 등",books:[
+["돈으로 살 수 없는 것들: 무엇이 가치를 결정하는가","마이클 샌델","193 샌28ㄷ c.8",true,"1층"],
+["넛지","리처드 탈러","321.89 탈293ㄴ",true,"2.5층 폐가제"],
+["경영학 콘서트","장영재","325 장94ㄱ",true,"2.5층 폐가제"],
+["죽은 경제학자의 살아있는 아이디어","토드 부크홀스","320.1 부676ㅈ c.3",true,"2.5층 폐가제"],
+["더 골","엘리 골드렛 · 제프 콕스","325.1 골26ㄷ3 v.1",true,"1층"]]},
+{name:"법·정치·사회·언론 계열",desc:"법학과 · 정치외교학과 · 행정학과 · 사회학과 등",books:[
+["카타리나 블룸의 잃어버린 명예","하인리히 뵐","808 세18v.180",true,"1층 넓은 계단"],
+["MT 콘텐츠학","정창권","372.68 장53M v.19",true,"1층"],
+["앵무새 죽이기","하퍼 리","843 리72ㅇ",true,"2.5층 폐가제"],
+["왜 세계의 절반은 굶주리는가","장 지글러","335.7 지16ㅇ c.4",true,"2.5층 폐가제"],
+["목민심서","정약용","001.3 서96 v.7",true,"2.5층 폐가제"]]},
+{name:"자연과학·기초과학 계열",desc:"수학과 · 물리학과 · 화학과 · 생명과학과 · 지구과학 등",books:[
+["물리학자처럼 영화 보기","다카미즈 유이치","",false,""],
+["세균에서 생명을 보다","고관수","",false,""],
+["역사가 묻고 미생물이 답하다","고관수","475 고18ㅇ",true,"1층 신간도서 코너"],
+["100가지 식물로 읽는 세계사","사이먼 반즈","",false,""],
+["나는 선량한 기후파괴자입니다","토마스 브루더만","",false,""]]},
+{name:"의학·보건의료 계열",desc:"의예과 · 치의예과 · 약학과 · 수의학과 등",books:[
+["응급구조사는 이렇게 일한다","이태양","",false,""],
+["인체 해부학 대백과","켄 에슈웰","",false,""],
+["다정함이 인격이다","김선희","",false,""],
+["디지털 헬스케어 개론","한빛 아카데미","",false,""],
+["한의사, 한약으로 말하다","곽도원 외 1명","",false,""]]},
+{name:"공학 계열",desc:"기계공학 · 신소재공학 · 화학공학 · 건축공학 · 도시공학 등",books:[
+["나노 기술의 이해","서갑양","",false,""],
+["엔트로피","제러미 리프킨","331.54 리696ㅇ c.4",true,"2.5층 폐가제"],
+["공학이란 무엇인가","성풍현","530.01 성696ㄱ",true,"3층 과학자료실"]]},
+{name:"IT·컴퓨터·소프트웨어 계열",desc:"컴퓨터공학과 · 소프트웨어학과 · 인공지능학과 등",books:[
+["컴퓨터 과학이 여는 세계","이광근","004 이18ㅋ",true,"주제도서3"],
+["미래를 바꾼 아홉 가지 알고리즘","존 매코믹","005.1 맥675ㅁ c.2",true,"2.5층 폐가제"],
+["한 권으로 읽는 컴퓨터 구조와 프로그래밍","조너선 스타인하트","",false,""]]}
+];
+
+let selected=-1;
+const $=id=>document.getElementById(id);
+
+function renderCategories(){
+ $("categories").innerHTML=groups.map((g,i)=>`<button class="cat ${selected===i?'active':''}" data-i="${i}"><strong>${g.name}</strong><small>${g.desc}</small></button>`).join("");
+ document.querySelectorAll(".cat").forEach(b=>b.addEventListener("click",()=>{
+  selected=Number(b.dataset.i);
+  renderCategories();
+  renderBooks();
+ }));
+}
+
+function renderBooks(){
+ const q=$("search").value.trim().toLocaleLowerCase("ko");
+ let entries=[];
+
+ groups.forEach((g,i)=>{
+  if(selected!==-1&&selected!==i)return;
+  g.books.forEach(b=>{
+   const hay=[g.name,...b].join(" ").toLocaleLowerCase("ko");
+   if(!q||hay.includes(q))entries.push({g:g.name,b});
+  });
+ });
+
+ $("heading").textContent=selected===-1?"전체 도서":groups[selected].name;
+ $("count").textContent=`총 ${entries.length}권 · 소장 ${entries.filter(x=>x.b[3]).length}권 · 미소장 ${entries.filter(x=>!x.b[3]).length}권`;
+
+ $("books").innerHTML=entries.length
+ ?entries.map(({g,b})=>`
+  <a class="book"
+     href="https://search.kyobobook.co.kr/search?keyword=${encodeURIComponent(b[0])}"
+     target="_blank"
+     rel="noopener noreferrer">
+    <h3>${esc(b[0])}</h3>
+    <div class="author">${esc(b[1])}</div>
+    ${b[2]?`<div class="meta">청구기호: ${esc(b[2])}</div>`:""}
+    <div class="meta">${esc(g)}</div>
+    <div class="bottom">
+      <span class="status ${b[3]?'yes':'no'}">${b[3]?'○ 도서관 소장':'X 도서관 미소장'}</span>
+      <span class="location">${b[3]?esc(b[4]):'소장 위치 정보 없음'}</span>
+    </div>
+  </a>`).join("")
+ :`<div class="empty">검색 결과가 없습니다.</div>`;
+}
+
+function esc(s){
+ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+$("search").addEventListener("input",renderBooks);
+renderCategories();
+renderBooks();
+</script>
+</body>
+</html>
